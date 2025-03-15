@@ -31,7 +31,7 @@
 **ArQiv** is a state-of-the-art search engine designed specifically for the ArXiv research corpus. It combines multiple indexing strategies and ranking algorithms to deliver lightning-fast, relevant results that help researchers discover papers more efficiently.
 
 <div align="center">
-  <img src="https://via.placeholder.com/800x400?text=ArQiv+Screenshot" alt="ArQiv Interface" width="80%" />
+  <img src="./assets/web-demo.png" alt="ArQiv Interface" width="80%" />
 </div>
 
 ## ✨ Key Features
@@ -132,7 +132,7 @@ streamlit run streamlit_app.py
 ```
 
 <div align="center">
-  <img src="https://via.placeholder.com/800x120?text=ArQiv+CLI+Demo" alt="CLI Demo" width="80%" />
+  <img src="./assets/cli-demo.png" alt="CLI Demo" width="80%" />
 </div>
 
 ## 🏗️ Architecture
