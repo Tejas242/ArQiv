@@ -89,7 +89,7 @@
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/yourusername/arqiv.git
+   git clone https://github.com/tejas242/ArQiv.git
    cd arqiv
    ```
 
@@ -167,6 +167,19 @@ ArQiv employs a layered architecture with the following components:
 | BERT ranking          | ~200ms      |
 
 _Measurements on Ryzen 3 CPU with 8GB RAM_
+
+## ⚠️ Limitations & Challenges
+
+While ArQiv is designed to be powerful and efficient, users should be aware of these limitations:
+
+- **Memory Usage:** The in-memory index requires approximately 50MB per 1,000 documents
+- **Scalability Ceiling:** Performance may degrade with datasets beyond 100,000 documents without distributed architecture
+- **Language Support:** Currently optimized for English text only
+- **Neural Features:** BERT-based ranking requires substantial CPU resources (GPU recommended)
+- **Cold Start:** First-time initialization has higher latency while building indices
+- **Preprocessing Effects:** Stemming may occasionally lead to unexpected term matches
+
+For large-scale deployment scenarios, consider implementing a sharded index architecture or using a database backend for the inverted index.
 
 ## 📁 Project Structure
 
