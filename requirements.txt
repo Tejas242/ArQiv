@@ -7,3 +7,4 @@ kaggle
 sentence-transformers
 pytest
 pytest-cov
+plotly
