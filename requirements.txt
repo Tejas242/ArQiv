@@ -1,0 +1,9 @@
+datasets
+nltk
+rich
+numpy
+scikit-learn
+kaggle
+sentence-transformers
+pytest
+pytest-cov
