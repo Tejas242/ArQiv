@@ -3,7 +3,7 @@ nltk
 rich
 numpy
 scikit-learn
-kaggle
+# kaggle
 sentence-transformers
 pytest
 pytest-cov
