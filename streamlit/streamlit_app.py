@@ -7,11 +7,12 @@ This module initializes and runs the Streamlit interface for the ArQiv search en
 import sys
 import os
 import time
+import pickle
+import logging
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# Ensure the project root is in sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from data.loader import load_arxiv_dataset
@@ -23,15 +24,10 @@ from search.fuzzy_search import fuzzy_search
 
 st.set_page_config(page_title="ArQiv Search", layout="wide", initial_sidebar_state="expanded")
 
-# custom CSS injection
-
 st.markdown(
     """
     <style>
-      /* Overall app styling */
       .main { background-color: #f9f9f9; padding: 20px; }
-      
-      /* Header banner */
       .header-banner {
           background: linear-gradient(135deg, #1a5276, #27ae60, #2e86c1);
           background-size: 300% 300%;
@@ -43,127 +39,46 @@ st.markdown(
           margin-bottom: 20px;
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       }
-      .header-banner h1 {
-          font-size: 3.2rem;
-          font-weight: 700;
-          margin-bottom: 0;
-          text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-          letter-spacing: 2px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
+      @keyframes gradient-animation {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
       }
-      /* Custom search text styling for logo */
-      .header-banner .q-text {
-          position: relative;
-          display: inline-block;
-          bottom: 4px;
+      .stProgress > div > div > div > div {
+          background-color: #2e8b57 !important;
+          background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.2) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.2) 75%, transparent 75%, transparent) !important;
+          background-size: 20px 20px !important;
+          animation: progress-bar-stripes 1s linear infinite !important;
       }
-      .header-banner p {
-          font-size: 1.2rem;
-          margin-top: 8px;
-          opacity: 0.9;
-          font-weight: 300;
-          letter-spacing: 1px;
-      }
-      
-      /* Sidebar info box */
-      .sidebar-info {
-          font-size: 14px;
-          color: #555;
-      }
-      
-      /* Result panel styling - minimalistic */
-      .result-panel {
-          border-bottom: 1px solid #eee;
-          padding: 15px 0;
-          margin-bottom: 5px;
-          transition: all 0.2s ease;
-      }
-      .result-panel:hover {
-          background-color: #f9f9f9;
-      }
-      .result-panel p { margin: 4px 0; }
-      
-      /* Search container styling - minimalistic */
-      .search-container {
-          margin-bottom: 20px;
-          border-bottom: 1px solid #eee;
-          padding-bottom: 15px;
-      }
-      
-      /* Search button styling */
-      .stButton>button {
-          background: #2e8b57;
-          color: white;
-          border: none;
-          padding: 8px 16px;
-          border-radius: 4px;
-          font-weight: 500;
-          transition: all 0.2s ease;
-      }
-      .stButton>button:hover {
-          background: #3a9e6a;
-          box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      }
-      
-      /* Tab styling */
-      .stTabs [data-baseweb="tab-list"] {
-          gap: 8px;
-      }
-      .stTabs [data-baseweb="tab"] {
-          padding: 8px 12px;
-          border-radius: 4px;
-      }
-      .stTabs [aria-selected="true"] {
-          background-color: rgba(46, 139, 87, 0.1);
-      }
-      
-      /* Autocomplete suggestions - minimalistic */
-      .autocomplete-container {
-          border-left: 3px solid #2e8b57;
-          padding: 10px 15px;
-          margin-bottom: 15px;
-          background-color: #f9f9f9;
-      }
-      
-      /* Metric styling - minimalistic */
-      .metric-container {
-          padding: 10px 0;
-          border-bottom: 1px solid #eee;
-      }
-      
-      /* Details styling */
-      details {
-          cursor: pointer;
-          margin-top: 8px;
-      }
-      details summary {
-          padding: 4px 0;
-          display: flex;
-          align-items: center;
-      }
-      details summary:hover {
-          color: #2e8b57;
-      }
-      
-      /* Make streamlit elements more minimal */
-      div.stMarkdown {
-          padding: 0 2px;
-      }
-      
-      /* Material symbol spacing helper */
-      .symbol-spacing {
-          margin-right: 6px;
-      }
+      @keyframes progress-bar-stripes { from { background-position: 40px 0; } to { background-position: 0 0; } }
+      .status-box { padding: 10px 15px; border-radius: 5px; background-color: #f8f9fa; border-left: 4px solid #2e8b57; margin-bottom: 16px; animation: fade-in 0.5s ease-in-out; }
+      @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+      .header-banner h1 { font-size: 3.2rem; font-weight: 700; margin-bottom: 0; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2); letter-spacing: 2px; display: inline-flex; align-items: center; justify-content: center; }
+      .header-banner .q-text { position: relative; display: inline-block; bottom: 4px; }
+      .header-banner p { font-size: 1.2rem; margin-top: 8px; opacity: 0.9; font-weight: 300; letter-spacing: 1px; }
+      .sidebar-info { font-size: 14px; color: #555; }
+      .result-panel { border-bottom: 1px solid #eee; padding: 15px 0; margin-bottom: 5px; transition: all 0.2s ease; }
+      .result-panel:hover { background-color: #f9f9f9; }
+      .search-container { margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+      .stButton>button { background: #2e8b57; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-weight: 500; transition: all 0.2s ease; }
+      .stButton>button:hover { background: #3a9e6a; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+      .stTabs [data-baseweb="tab-list"] { gap: 8px; }
+      .stTabs [data-baseweb="tab"] { padding: 8px 12px; border-radius: 4px; }
+      .stTabs [aria-selected="true"] { background-color: rgba(46, 139, 87, 0.1); }
+      .autocomplete-container { border-left: 3px solid #2e8b57; padding: 10px 15px; margin-bottom: 15px; background-color: #f9f9f9; }
+      .metric-container { padding: 10px 0; border-bottom: 1px solid #eee; }
+      details { cursor: pointer; margin-top: 8px; }
+      details summary { padding: 4px 0; display: flex; align-items: center; }
+      details summary:hover { color: #2e8b57; }
+      div.stMarkdown { padding: 0 2px; }
+      .symbol-spacing { margin-right: 6px; }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-# Initialize session state for URL parameters
+# Initialize session state for URL parameters and search engine components
 if "url_params_initialized" not in st.session_state:
-    # Get query params from URL
     if "query" in st.query_params:
         st.session_state["search_query"] = st.query_params["query"]
     else:
@@ -174,73 +89,221 @@ if "url_params_initialized" not in st.session_state:
     else:
         st.session_state["search_mode"] = "BM25"
         
+    if "sample_size" not in st.session_state:
+        st.session_state["sample_size"] = 1000
+    
+    st.session_state["engine_initialized"] = False
+    st.session_state["first_run"] = True
+    st.session_state["docs"] = None
+    st.session_state["index"] = None
+    st.session_state["bm25_ranker"] = None
+    st.session_state["tfidf_ranker"] = None
+    st.session_state["fast_vector_ranker"] = None
+    
     st.session_state["url_params_initialized"] = True
+    
+    st.session_state["previous_search_mode"] = st.session_state.get("search_mode", "BM25")
 
-@st.cache_resource(show_spinner=True)
-def init_search_engine(sample_size=1000):
-    """Initialize and cache search engine components."""
-    docs = load_arxiv_dataset(sample_size=sample_size)
-    index = InvertedIndex()
-    if not index.load_from_file():
-        for doc in docs:
-            index.index_document(doc)
-        index.save_to_file()
-    bm25_ranker = BM25Ranker(docs, index)
-    tfidf_ranker = TFIDFRanker(docs)
-    fast_vector_ranker = FastVectorRanker(docs)
+def init_search_engine(sample_size=None, force_reload=False):
+    sample_size = sample_size or st.session_state.get("sample_size", 1000)
+    first_run = st.session_state.get("first_run", True)
+    verbose = first_run
+    
+    if (st.session_state.get("engine_initialized") and 
+        st.session_state.get("current_sample_size") == sample_size and 
+        not force_reload and not first_run):
+        return (
+            st.session_state["docs"],
+            st.session_state["index"],
+            st.session_state["bm25_ranker"],
+            st.session_state["tfidf_ranker"],
+            st.session_state["fast_vector_ranker"]
+        )
+    
+    loading_container = st.empty()
+    
+    with loading_container.container():
+        if first_run:
+            st.markdown('<div class="status-box">', unsafe_allow_html=True)
+            st.markdown(f"### Initializing ArQiv Search Engine")
+            st.markdown(f"Loading {sample_size} documents and building search indices. This may take a moment...")
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            cols = st.columns(10)
+            for i in range(10):
+                with cols[i]:
+                    st.markdown(f"<div style='height: 5px; background-color: {'#2e8b57' if i < 5 else '#92dec0'}; margin: 2px; animation: pulse 1.5s infinite {i*0.1}s;'></div>", unsafe_allow_html=True)
+        
+        with st.spinner(f"Loading search engine components..."):
+            original_level = logging.getLogger().level
+            if not verbose:
+                logging.getLogger().setLevel(logging.WARNING)
+            
+            cache_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "cache")
+            os.makedirs(cache_dir, exist_ok=True)
+            custom_cache_path = os.path.join(cache_dir, f"inverted_index_cache_{sample_size}.pkl")
+            
+            with st.status("Loading ArXiv dataset", expanded=first_run) as data_status:
+                docs = load_arxiv_dataset(sample_size=sample_size, verbose=verbose)
+                data_status.update(label="✅ Dataset loaded successfully", state="complete")
+            
+            index = InvertedIndex()
+            
+            index_loaded = index.load_from_file(filepath=custom_cache_path, sample_size=sample_size, verbose=verbose)
+            
+            if not index_loaded:
+                if not verbose:
+                    logging.getLogger().setLevel(original_level)
+                    
+                with st.status("Building search index...", expanded=True) as index_status:
+                    status_text = "Building search index for the first time..." if first_run else f"Building new index for {sample_size} documents..."
+                    st.markdown(f"<p>{status_text}</p>", unsafe_allow_html=True)
+                    
+                    progress_bar = st.progress(0)
+                    total_docs = len(docs)
+                    
+                    for i, doc in enumerate(docs):
+                        index.index_document(doc)
+                        if i % max(1, total_docs // 100) == 0:
+                            percent = min(1.0, i / total_docs)
+                            progress_bar.progress(
+                                percent,
+                                text=f"Indexing document {i+1}/{total_docs} ({int(percent*100)}%)"
+                            )
+                    
+                    progress_bar.progress(1.0, text="✅ Indexing complete!")
+                    
+                    st.info("Saving index to disk...")
+                    index.save_to_file(filepath=custom_cache_path, sample_size=sample_size)
+                    index_status.update(label="✅ Search index built successfully", state="complete")
+                
+                if not verbose:
+                    logging.getLogger().setLevel(logging.WARNING)
+            else:
+                st.success(f"✅ Loaded existing index with {len(index.index)} terms")
+            
+            with st.status("Initializing ranking algorithms...", expanded=first_run) as ranker_status:
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    with st.spinner("BM25 Ranker"):
+                        bm25_ranker = BM25Ranker(docs, index)
+                        st.success("BM25 ✓")
+                
+                with col2:
+                    with st.spinner("TF-IDF Ranker"):
+                        tfidf_ranker = TFIDFRanker(docs)
+                        st.success("TF-IDF ✓")
+                
+                with col3:
+                    with st.spinner("Vector Ranker"):
+                        fast_vector_ranker = FastVectorRanker(docs)
+                        st.success("Vector ✓")
+                        
+                ranker_status.update(label="✅ Ranking components initialized", state="complete")
+            
+            logging.getLogger().setLevel(original_level)
+            
+            if first_run:
+                st.success("🚀 ArQiv search engine initialized successfully! You can now start searching.")
+    
+    if not first_run:
+        loading_container.empty()
+    
+    st.session_state["first_run"] = False
+    
+    st.session_state["engine_initialized"] = True
+    st.session_state["current_sample_size"] = sample_size
+    st.session_state["docs"] = docs
+    st.session_state["index"] = index
+    st.session_state["bm25_ranker"] = bm25_ranker
+    st.session_state["tfidf_ranker"] = tfidf_ranker
+    st.session_state["fast_vector_ranker"] = fast_vector_ranker
+    
     return docs, index, bm25_ranker, tfidf_ranker, fast_vector_ranker
 
+with st.sidebar:
+    st.header("ArQiv Search Engine")
+    with st.expander("🔍 Search Configuration", expanded=True):
+        st.subheader("Search Mode")
+        search_mode = st.radio(
+            "Select search algorithm",
+            ("Basic Boolean", "BM25", "TF-IDF", "Fast Vector", "Fuzzy"),
+            index=["Basic Boolean", "BM25", "TF-IDF", "Fast Vector", "Fuzzy"].index(
+                st.session_state.get("search_mode", "BM25")
+            ),
+            key="search_mode_radio",
+            help="Each mode offers different search capabilities."
+        )
+        if search_mode != st.session_state.get("previous_search_mode"):
+            st.session_state["search_mode"] = search_mode
+            st.session_state["previous_search_mode"] = search_mode
+        st.divider()
+        st.subheader("Dataset Size")
+        st.info(f"Current: {st.session_state.get('sample_size', 1000)} documents")
+        new_sample_size = st.slider(
+            "Documents to load", 
+            min_value=100, 
+            max_value=10000, 
+            value=st.session_state.get("sample_size", 1000),
+            step=100,
+            help="Larger values provide more comprehensive search but require more memory."
+        )
+        if new_sample_size != st.session_state.get("sample_size", 1000):
+            if st.button("Apply Changes", key="apply_sample_size", use_container_width=True):
+                with st.spinner("Updating dataset..."):
+                    st.session_state["sample_size"] = new_sample_size
+                    st.session_state["engine_initialized"] = False
+                    st.rerun()
+    with st.expander("⚙️ Search Options"):
+        show_autocomplete = st.checkbox("Show Autocomplete Suggestions", value=True)
+        st.subheader("Result Filters")
+        categories = ["cs.AI", "cs.LG", "cs.CL", "math.ST", "physics.comp-ph"]
+        selected_categories = st.multiselect("Filter by categories", options=categories, default=[])
+    with st.expander("ℹ️ About Search Modes"):
+        st.markdown("""
+- **Basic Boolean**: AND search returning documents containing all query terms  
+- **BM25**: Probabilistic relevance ranking  
+- **TF-IDF**: Vector similarity ranking  
+- **Fast Vector**: Approximate semantic ranking  
+- **Fuzzy**: Handles spelling errors
+        """)
 
-docs, index, bm25_ranker, tfidf_ranker, fast_vector_ranker = init_search_engine()
+progress_placeholder = st.empty()
+with progress_placeholder:
+    docs, index, bm25_ranker, tfidf_ranker, fast_vector_ranker = init_search_engine()
 
-# Display header banner with emphasis on the "Q" in "ArQiv"
+if not st.session_state.get("first_run", True):
+    progress_placeholder.empty()
+
 st.markdown(
     '<div class="header-banner"><h1>Ar<span class="q-text"><svg xmlns="http://www.w3.org/2000/svg" height="48px" viewBox="0 -960 960 960" width="48px" fill="white"><path d="M200-800v241-1 400-640 200-200Zm0 720q-33 0-56.5-23.5T120-160v-640q0-33 23.5-56.5T200-880h320l240 240v100q-19-8-39-12.5t-41-6.5v-41H480v-200H200v640h241q16 24 36 44.5T521-80H200Zm460-120q42 0 71-29t29-71q0-42-29-71t-71-29q-42 0-71 29t-29 71q0 42 29 71t71 29ZM864-40 756-148q-21 14-45.5 21t-50.5 7q-75 0-127.5-52.5T480-300q0-75 52.5-127.5T660-480q75 0 127.5 52.5T840-300q0 26-7 50.5T812-204L920-96l-56 56Z"/></svg></span>iv</h1>'
     '<p>Advanced, Fast & Scalable Academic Search</p></div>',
     unsafe_allow_html=True,
 )
 
-# Sidebar with enhanced options and documentation
-with st.sidebar:
-    st.header("Search Options")
-    search_mode = st.radio(
-        "Select Search Mode",
-        ("Basic Boolean", "BM25", "TF-IDF", "Fast Vector", "Fuzzy"),
-        index=["Basic Boolean", "BM25", "TF-IDF", "Fast Vector", "Fuzzy"].index(
-            st.session_state.get("search_mode", "BM25")
-        )
-    )
-    
-    # Store search mode in session state
-    st.session_state["search_mode"] = search_mode
-    
-    show_autocomplete = st.checkbox("Show Autocomplete Suggestions", value=True)
-    
-    # Add filter options
-    st.markdown("### Filter Results")
-    with st.expander("Category Filters"):
-        categories = ["cs.AI", "cs.LG", "cs.CL", "math.ST", "physics.comp-ph"]
-        selected_categories = st.multiselect(
-            "Select categories to include",
-            options=categories,
-            default=[]
-        )
-    
-    st.markdown("---")
-    # Documentation in sidebar
-    with st.expander("About Search Modes"):
-        st.markdown("""
-        - **Basic Boolean**: Simple AND search returning documents containing all query terms
-        - **BM25**: Probabilistic relevance ranking (similar to modern search engines)
-        - **TF-IDF**: Term frequency-inverse document frequency ranking
-        - **Fast Vector**: Quick approximate semantic ranking
-        - **Fuzzy**: Handles spelling errors and variations
-        """)
-
-
 def main():
-    """Main function to run the search interface."""
-    # Main search bar with URL parameter handling
+    with st.container():
+        dataset_cols = st.columns([3, 2])
+        with dataset_cols[0]:
+            st.markdown(
+                f"""
+                <div class="status-box" style="padding: 10px 15px; background-color: #f0f8ff; border-left-color: #1a5276; margin-bottom: 10px;">
+                  <strong>{len(docs)}</strong> documents loaded | <strong>{len(index.index)}</strong> terms in index
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        with dataset_cols[1]:
+            st.markdown(
+                f"""
+                <div style="text-align: right; padding-top: 8px; font-size: 14px; color: #666;">
+                  Active mode: <strong>{st.session_state.get("search_mode", "BM25")}</strong>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+    
     search_container = st.container()
     with search_container:
         st.markdown('<div class="search-container">', unsafe_allow_html=True)
@@ -254,20 +317,16 @@ def main():
                 help="Enter terms to search for in the ArXiv corpus"
             )
         with col2:
-            st.markdown("<br>", unsafe_allow_html=True)  # Add spacing
+            st.markdown("<br>", unsafe_allow_html=True)
             if st.button("Search", icon=":material/search:", use_container_width=True, help="Click to search"):
-                # Update URL parameters when search button is clicked
                 st.query_params.query = search_query
                 st.query_params.mode = search_mode
         st.markdown("</div>", unsafe_allow_html=True)
         
-        # Display current search mode
         st.markdown(f"<p style='margin-top: -10px; color: #555; font-size: 14px;'>Active mode: <strong>{search_mode}</strong></p>", unsafe_allow_html=True)
                 
-    # Store current query
     st.session_state["search_query"] = search_query
 
-    # Dynamic Autocomplete with improved styling
     if search_query and show_autocomplete:
         suggestions = index.trie.starts_with(search_query.lower())
         if suggestions:
@@ -276,14 +335,9 @@ def main():
             for i, suggestion in enumerate(suggestions[:10]):
                 if cols[i % 5].button(suggestion, key=f"sugg_{suggestion}", help=f"Use suggestion: {suggestion}", use_container_width=True):
                     st.session_state["search_query"] = suggestion
-                    # Update URL parameters for the suggestion
-                    st.query_params.query = suggestion
-                    st.query_params.mode = search_mode
-                    st.markdown(
-                        "<script>window.location.reload()</script>",
-                        unsafe_allow_html=True,
-                    )
-                    st.stop()
+                    st.query_params["query"] = suggestion
+                    st.query_params["mode"] = search_mode
+                    st.rerun()
 
     if search_query:
         with st.spinner("Searching..."):
@@ -291,7 +345,6 @@ def main():
             results = None
             if search_mode == "Basic Boolean":
                 raw_results = index.search(search_query)
-                # Convert to list of doc_ids without scores for consistent handling
                 results = list(raw_results) if raw_results else []
             elif search_mode == "BM25":
                 scores = bm25_ranker.rank(search_query)
@@ -307,11 +360,9 @@ def main():
                 results = sorted(filtered_scores.items(), key=lambda x: x[1], reverse=True)
             elif search_mode == "Fuzzy":
                 fuzzy_results = fuzzy_search(search_query, index)
-                # Convert to list of doc_ids without scores for consistent handling
                 results = list(fuzzy_results) if fuzzy_results else []
             elapsed = time.perf_counter() - start_time
 
-        # Use Streamlit's native Material Symbols for tabs - without emojis
         tabs = st.tabs([
             "Results", 
             "Visualization", 
@@ -326,16 +377,14 @@ def main():
                 query_tokens = [re.escape(token) for token in search_query.split() if token.strip()]
                 pattern = re.compile("|".join(query_tokens), re.IGNORECASE) if query_tokens else None
                 
-                # Handle different result formats properly
                 processed_results = []
                 
                 if isinstance(results, list):
-                    if results and isinstance(results[0], tuple):  # Results with scores (BM25, TF-IDF, Vector)
+                    if results and isinstance(results[0], tuple):
                         processed_results = results
-                    else:  # Basic Boolean or Fuzzy (just doc IDs)
+                    else:
                         processed_results = [(doc_id, None) for doc_id in results]
                 else:
-                    # Handle unexpected result format
                     st.error("Unexpected result format. Please try a different search mode.")
                     
                 for doc_id, score in processed_results:
@@ -347,7 +396,6 @@ def main():
                         else:
                             highlighted_abstract = full_abstract
                             
-                        # Add score display for modes that provide scores
                         score_display = f" | Score: {score:.4f}" if score is not None else ""
                             
                         st.markdown(
@@ -375,17 +423,16 @@ def main():
             else:
                 st.warning("No results found.")
 
-            # Apply category filter if selected
             if selected_categories and results:
                 filtered_results = []
                 
                 if isinstance(results, list):
-                    if results and isinstance(results[0], tuple):  # Results with scores
+                    if results and isinstance(results[0], tuple):
                         for doc_id, score in results:
                             doc = next((d for d in docs if d.doc_id == doc_id), None)
                             if doc and any(cat in doc.metadata.get('categories', '') for cat in selected_categories):
                                 filtered_results.append((doc_id, score))
-                    else:  # Basic Boolean or Fuzzy (just doc IDs)
+                    else:
                         for doc_id in results:
                             doc = next((d for d in docs if d.doc_id == doc_id), None)
                             if doc and any(cat in doc.metadata.get('categories', '') for cat in selected_categories):
@@ -396,10 +443,8 @@ def main():
         with tabs[1]:
             st.header("Visualization")
             if search_mode in ["BM25", "TF-IDF", "Fast Vector"] and results and isinstance(results, list):
-                # Enhanced visualization with Plotly
                 df = pd.DataFrame(results, columns=["doc_id", "score"])
                 
-                # Plotly bar chart for better interactivity
                 fig = px.bar(
                     df.sort_values("score", ascending=False).head(15), 
                     x="doc_id", 
@@ -411,7 +456,6 @@ def main():
                 )
                 st.plotly_chart(fig, use_container_width=True)
                 
-                # Show score distribution
                 st.markdown("#### Score Distribution")
                 hist_fig = px.histogram(
                     df, 
@@ -426,7 +470,6 @@ def main():
         with tabs[2]:
             st.header("Search Analytics")
             if results:
-                # Calculate analytics on results
                 result_count = len(results)
                 avg_score = 0
                 
@@ -435,7 +478,6 @@ def main():
                         scores = [score for _, score in results]
                         avg_score = sum(scores) / len(scores) if scores else 0
                 
-                # Display stats in metrics without emojis
                 col1, col2, col3 = st.columns(3)
                 with col1:
                     st.markdown('<div class="metric-container">', unsafe_allow_html=True)
@@ -450,7 +492,6 @@ def main():
                     st.metric("Search Time", f"{elapsed:.4f}s")
                     st.markdown("</div>", unsafe_allow_html=True)
                 
-                # Show query term frequency
                 st.subheader("Query Term Analysis")
                 if query_tokens:
                     term_counts = {}

@@ -58,3 +58,15 @@ Thumbs.db
 arxiv-metadata-*.json
 arxiv-metadata-*.jsonl
 arxiv.zip
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Project specific
+data/arxiv-metadata-oai-snapshot.json

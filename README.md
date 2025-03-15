@@ -8,7 +8,8 @@
     <a href="#-getting-started">Getting Started</a> •
     <a href="#-usage">Usage</a> •
     <a href="#-architecture">Architecture</a> •
-    <a href="#-benchmarks">Benchmarks</a>
+    <a href="#-benchmarks">Benchmarks</a> •
+    <a href="https://arqiv-search.streamlit.app/" target="_blank">Live Demo</a>
   </p>
   
   <!-- Technology badges -->
@@ -30,8 +31,11 @@
 
 **ArQiv** is a state-of-the-art search engine designed specifically for the ArXiv research corpus. It combines multiple indexing strategies and ranking algorithms to deliver lightning-fast, relevant results that help researchers discover papers more efficiently.
 
+> Only first 1000 documents are loaded change the sample_size in `loader.py` file to load more docs or full dataset.
+
 <div align="center">
-  <img src="./assets/web-demo.png" alt="ArQiv Interface" width="80%" />
+  <img src="./assets/web-demo.png" alt="ArQiv Interface" width="100%" />
+  <p><a href="https://arqiv-search.streamlit.app/" target="_blank">Try the live demo</a></p>
 </div>
 
 ## ✨ Key Features
@@ -131,8 +135,12 @@ cd streamlit
 streamlit run streamlit_app.py
 ```
 
+Or use the hosted version:
+
+**[https://arqiv-search.streamlit.app/](https://arqiv-search.streamlit.app/)**
+
 <div align="center">
-  <img src="./assets/cli-demo.png" alt="CLI Demo" width="80%" />
+  <img src="./assets/cli-demo.png" alt="CLI Demo" width="100%" />
 </div>
 
 ## 🏗️ Architecture

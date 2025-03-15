@@ -17,7 +17,13 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 
 # Cache files and versioning
-CACHE_INDEX_FILE = os.path.join(os.path.dirname(__file__), "inverted_index_cache.pkl")
+def get_index_cache_path(sample_size: int = None) -> str:
+    """Get sample-size specific index cache file path."""
+    base_path = os.path.dirname(__file__)
+    if sample_size:
+        return os.path.join(base_path, f"inverted_index_cache_{sample_size}.pkl")
+    return os.path.join(base_path, "inverted_index_cache.pkl")
+
 INDEX_VERSION = "v2"  # Update version when making structural changes to the index
 
 
@@ -142,18 +148,23 @@ class InvertedIndex:
         
         logger.info(f"Completed full indexing in {time.time() - start_time:.2f} seconds")
     
-    def _build_bitmap_index(self) -> None:
+    def _build_bitmap_index(self, verbose: bool = True) -> None:
         """
         Build bitmap representation of the index for faster boolean operations.
         
         This is how commercial search engines achieve sub-millisecond conjunctive queries.
+        
+        Args:
+            verbose: Whether to show detailed log messages
         """
         start_time = time.time()
         
         if not self.doc_ids:
             return
             
-        logger.info("Building bitmap index for fast boolean operations...")
+        if verbose:
+            logger.info("Building bitmap index for fast boolean operations...")
+        
         self.bitmap_index = BitmapIndex(len(self.doc_ids))
         
         # Register document IDs
@@ -164,60 +175,118 @@ class InvertedIndex:
         for term, postings in self.index.items():
             self.bitmap_index.add_term(term, list(postings.keys()))
             
-        logger.info(f"Built bitmap index in {time.time() - start_time:.2f} seconds")
+        if verbose:
+            logger.info(f"Built bitmap index in {time.time() - start_time:.2f} seconds")
 
-    def save_to_file(self, filepath: str = CACHE_INDEX_FILE) -> None:
+    def save_to_file(self, filepath: str = None, sample_size: int = None) -> None:
         """
         Save index structures to disk for persistence between runs.
         
         Args:
             filepath: Path to save the index cache
+            sample_size: Sample size used for creating this index
         """
         start_time = time.time()
+        
+        if filepath is None:
+            filepath = get_index_cache_path(sample_size)
         
         with open(filepath, "wb") as f:
             pickle.dump({
                 "version": self.version, 
                 "index": self.index,
-                "doc_ids": self.doc_ids
+                "doc_ids": self.doc_ids,
+                "sample_size": sample_size
             }, f)
             
         logger.info(f"Saved inverted index cache to {filepath} in {time.time() - start_time:.2f} seconds")
 
-    def load_from_file(self, filepath: str = CACHE_INDEX_FILE) -> bool:
+    def load_from_file(self, filepath: str = None, sample_size: int = None, verbose: bool = False) -> bool:
         """
         Load index from disk and rebuild auxiliary structures.
         
         Args:
             filepath: Path to the index cache file
+            sample_size: Sample size to validate cache against
+            verbose: Whether to show detailed log messages
             
         Returns:
             True if successfully loaded, False otherwise
         """
+        # Temporarily reduce logging level if not verbose
+        if not verbose:
+            original_level = logger.level
+            logger.setLevel(logging.WARNING)
+        
+        if filepath is None:
+            filepath = get_index_cache_path(sample_size)
+        
+        if verbose:
+            logger.info(f"Attempting to load index from {filepath}")
+            
         if os.path.exists(filepath):
             start_time = time.time()
             
-            with open(filepath, "rb") as f:
-                cached = pickle.load(f)
-                
-            if cached.get("version") == self.version:
-                self.index = cached.get("index", defaultdict(dict))
-                self.doc_ids = cached.get("doc_ids", [])
-                
-                # Rebuild trie and bitmap indexes
-                logger.info("Rebuilding trie from loaded index...")
-                for term, postings in self.index.items():
-                    for doc_id, positions in postings.items():
-                        for position in positions:
-                            self.trie.insert(term, doc_id, position)
-                
-                self._build_bitmap_index()
-                
-                logger.info(f"Loaded index with {len(self.index)} terms in {time.time() - start_time:.2f} seconds")
-                return True
-            else:
-                logger.info("Index cache version mismatch. Rebuilding index.")
-                
+            try:
+                with open(filepath, "rb") as f:
+                    cached = pickle.load(f)
+                    
+                if cached.get("version") == self.version:
+                    # Check sample size if specified
+                    if sample_size is not None and cached.get("sample_size") != sample_size:
+                        if verbose:
+                            logger.info(f"Index cache sample size mismatch. Expected {sample_size}, got {cached.get('sample_size')}")
+                        # Restore logging level
+                        if not verbose:
+                            logger.setLevel(original_level)
+                        return False
+                        
+                    self.index = cached.get("index", defaultdict(dict))
+                    self.doc_ids = cached.get("doc_ids", [])
+                    
+                    # Validate that we got actual data
+                    if not self.doc_ids or not self.index:
+                        if verbose:
+                            logger.warning("Loaded cache appears to be empty. Will rebuild index.")
+                        # Restore logging level
+                        if not verbose:
+                            logger.setLevel(original_level)
+                        return False
+                    
+                    # Rebuild trie and bitmap indexes
+                    if verbose:
+                        logger.info("Rebuilding trie from loaded index...")
+                    
+                    # Build the trie
+                    self.trie = Trie()  # Ensure trie is initialized fresh
+                    for term, postings in self.index.items():
+                        for doc_id, positions in postings.items():
+                            for position in positions:
+                                self.trie.insert(term, doc_id, position)
+                    
+                    # Build the bitmap index
+                    self._build_bitmap_index(verbose=verbose)
+                    
+                    if verbose:
+                        logger.info(f"Loaded index with {len(self.index)} terms in {time.time() - start_time:.2f} seconds")
+                    
+                    # Restore logging level
+                    if not verbose:
+                        logger.setLevel(original_level)
+                    return True
+                else:
+                    if verbose:
+                        logger.info("Index cache version mismatch. Rebuilding index.")
+            except Exception as e:
+                if verbose:
+                    logger.warning(f"Error loading index cache: {str(e)}")
+        else:
+            if verbose:
+                logger.info(f"Cache file not found at {filepath}")
+        
+        # Restore logging level
+        if not verbose:
+            logger.setLevel(original_level)            
         return False
 
     def search(self, query: str) -> Set[str]:
