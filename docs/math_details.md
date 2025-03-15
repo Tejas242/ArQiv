@@ -17,9 +17,11 @@ where:
 - $$k_1$$ is a tuning parameter (typically around 1.5) that controls the scaling of term frequency.
 - $$b$$ is a document length normalization parameter (typically around 0.75).
 - The inverse document frequency (IDF) is given by:
+
 $$
 \text{idf}(term) = \log\!\Biggl(\frac{N - df + 0.5}{df + 0.5} + 1\Biggr)
 $$
+
 with:
   - $$N$$ = total number of documents,
   - $$df$$ = number of documents containing the term.
@@ -29,15 +31,18 @@ These components ensure that rare terms (high IDF) are emphasized, and document 
 ## TF-IDF and Cosine Similarity
 
 The TF-IDF weight for a term $$t$$ in a document $$D$$ is calculated as:
+
 $$
 \text{tf-idf}(t, D) = tf(t, D) \times \log\!\Biggl(\frac{N}{df(t)}\Biggr)
 $$
+
 where:
 - $$tf(t, D)$$ is the frequency of term $$t$$ in document $$D$$,
 - $$df(t)$$ is the document frequency of $$t$$,
 - $$N$$ is the total number of documents.
 
 Cosine similarity between the query vector $$Q$$ and a document vector $$D$$ is defined as:
+
 $$
 \text{similarity}(Q, D) = \frac{Q \cdot D}{\|Q\| \, \|D\|}
 $$
