@@ -1,18 +1,14 @@
-# Performance Benchmarks for ArQiv
+# ArQiv Performance Benchmarks
 
-This document details the results of performance benchmarks run on ArQiv.
+Evaluate ArQiv’s speed and efficiency with these benchmarks measured on a Ryzen 3 CPU with 8GB RAM.
 
-## Indexing Performance
+| Task                        | Performance         |
+| --------------------------- | ------------------- |
+| Indexing 1,000 documents    | ~0.8 seconds        |
+| Boolean Search              | < 5 ms              |
+| BM25 Ranking                | 50 – 100 ms         |
+| TF-IDF Ranking              | < 5 ms              |
+| Fast Vector Ranking         | < 5 ms              |
+| BERT Ranking (optional)     | ~200 ms             |
 
-- Built inverted index on 1,000 documents in approximately **0.79 seconds** (using parallel indexing with 4 workers).
-
-## BM25 Ranking
-
-- Average BM25 response time for query "deep learning" is approximately **0.0045 milliseconds**.
-
-## Future Improvements
-
-- Consider moving heavy operations (such as BERT ranking) to GPU-enabled environments.
-- Explore further multiprocess optimizations and caching strategies.
-
-*Note: These benchmarks were run on a HP Notebook (CPU: Ryzen 3, RAM: 8GB) machine.*
+_Notes: Optimizations like parallel processing and in-memory caching ensure rapid turnaround even on modest hardware._

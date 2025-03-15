@@ -1,58 +1,30 @@
-# Technical Details of ArQiv
+# Technical Deep-Dive into ArQiv
 
-Welcome to the technical deep-dive for ArQiv. In this document, we walk through the core components of the search engine.
+Discover the inner workings of ArQiv, from data ingestion to state-of-the-art ranking algorithms.
 
-## Data Loading and Preprocessing
+## Data Ingestion and Preprocessing
 
-- **Dataset Acquisition:**  
-  ArQiv downloads the ArXiv metadata using Kaggle CLI (or falls back to curl if necessary).  
-  The raw JSON lines are parsed into `Document` objects that store the ArXiv id, title, content, and additional metadata.
+- **Acquisition:**  
+  ArQiv downloads ArXiv metadata using Kaggle CLI (with fallback to curl) and converts JSONL records into standardized Document objects.
 
 - **Preprocessing Pipeline:**  
-  Text preprocessing involves:
-  - **Tokenization:** Splitting text into words using regex.
-  - **Stopword Removal:** Filtering out common English words via NLTK.
-  - **Stemming:** Reducing words to their root using the Porter Stemmer.
+  The text is tokenized, cleansed of stopwords (via NLTK), and stemmed using PorterStemmer for normalization.
 
-  This pipeline ensures that the documents are normalized for indexing and retrieval.
-
-## Indexing
+## Indexing Strategies
 
 - **Inverted Index:**  
-  The core structure maps each term to its occurrences (positions) in each document.  
-  For every document, the combined text (title + content) is preprocessed and then each term’s position is recorded.
+  Maps individual terms to their positions in each document. Essential for rapid boolean and ranked queries.
 
-- **Trie Data Structure:**  
-  In addition to the inverted index, a Trie is built for fast prefix matching (useful for autocomplete and fuzzy queries).
-
-- **Bitmap Index:**  
-  Using NumPy arrays, a bitmap is built to quickly perform boolean operations (AND/OR) over documents.  
-  This allows extremely fast candidate retrieval.
+- **Trie and Bitmap Indexes:**  
+  - **Trie:** Enables fast autocomplete and fuzzy matching.  
+  - **Bitmap:** Uses vectorized Boolean operations for sub-millisecond candidate retrieval.
 
 ## Ranking Algorithms
 
-ArQiv supports multiple ranking functions:
-- **BM25 Ranking:**  
-  A probabilistic ranking function that computes:
-  ```
-  score = Σ [ idf(term) × ((f × (k1 + 1)) / (f + k1 * (1 - b + b * (dl / avgdl))) ) ]
-  ```
-  where _f_ is term frequency, _dl_ is document length, and `k1`, `b` are tunable parameters.  
-  IDF is computed as:
-  ```
-  idf(term) = log((N - df + 0.5) / (df + 0.5) + 1)
-  ```
-  with _N_ being the total number of documents and _df_ the document frequency.
+ArQiv supports several ranking functions:
+- **BM25:** Probabilistic scoring with document length normalization.
+- **TF-IDF:** Vector space models with cosine similarity.
+- **Fast Vector Ranking:** NearestNeighbors search for real-time responses.
+- **BERT (Optional):** Transformer-based semantic ranking (resource intensive).
 
-- **TF-IDF & Fast Vector Ranking:**  
-  These rely on scikit‑learn’s `TfidfVectorizer` to convert documents into vectors. Cosine similarity is then computed between the query vector and document vectors.
-
-- **BERT-based Ranking (Optional):**  
-  Uses SentenceTransformer models to encode text into semantic embeddings.  
-  Ranking is done via cosine similarity over high-dimensional embeddings.
-
-## Parallel Processing
-
-ArQiv builds the inverted index in parallel using Python’s `ProcessPoolExecutor`, breaking the dataset into chunks and merging partial indices at the end.
-
-This document has provided an overview of the technical workings. In the next file, we will dive deeper into the math behind our BM25 ranking.
+This document underpins the design choices and math that drive ArQiv.

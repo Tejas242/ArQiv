@@ -1,15 +1,15 @@
-# Overview
+# ArQiv Overview
 
-ArQiv is a state-of-the-art search engine designed specifically for the ArXiv research corpus. It leverages efficient data structures and diverse ranking algorithms to deliver rapid and highly relevant search results, even on modest hardware.
+ArQiv is a next-generation search engine tailored for ArXiv papers. Its unique blend of optimized data structures and diverse ranking methods makes it both lightning-fast and highly accurate.
 
-## Key Objectives
+## What Makes ArQiv Stand Out?
 
-- **Speed:** Achieve near-real-time search performance using an inverted index combined with bitmap-based acceleration.
-- **Accuracy:** Provide multiple ranking methods including BM25 and TF-IDF to ensure the most relevant results are returned.
-- **Scalability:** Employ parallel processing and modular design for handling large datasets.
-- **Flexibility:** Support advanced, semantic search via optional BERT-based ranking.
+- **Speed:** Combines an inverted index with bitmap acceleration for near-real-time responses.
+- **Accuracy:** Integrates traditional (BM25, TF-IDF) and advanced (Fast Vector, optional BERT) ranking.
+- **Scalability:** Built with parallel processing and modular design to handle varying dataset sizes.
+- **Flexibility:** A rich CLI and an interactive Streamlit web app ensure accessibility for all users.
 
-This document offers a high-level introduction to the project, its core concepts, and the key technologies powering ArQiv.
+ArQiv transforms how researchers discover relevant work in the vast world of ArXiv.
 
 ---
 

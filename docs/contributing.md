@@ -1,47 +1,39 @@
 # Contributing to ArQiv
 
-We welcome contributions from developers, researchers, and enthusiasts who wish to improve ArQiv. Follow the guidelines below to contribute effectively.
+We welcome contributions from developers and researchers. Follow these steps to contribute effectively.
 
-## How to Get Started
+## Getting Started
 
-1. **Fork and Clone the Repository:**
+1. **Fork and Clone**
    ```bash
-   git fork <repository_url>
+   git fork https://github.com/tejas242/ArQiv.git
    git clone <your_fork_url>
-   cd Fun/ArQiv
+   cd ArQiv
    ```
 
-2. **Create a Feature Branch:**
-   Choose a descriptive branch name for your changes:
+2. **Create a Feature Branch**
    ```bash
-   git checkout -b feature/your-feature-description
+   git checkout -b feature/your-feature
    ```
 
-3. **Implement Your Changes:**
-   - Follow PEP8 guidelines.
-   - Add detailed comments and update documentation as needed.
-   - Ensure new features are modular and don’t break existing functionality.
+3. **Implement Changes**
+   - Adhere to PEP8 standards.
+   - Include tests and update documentation as needed.
+   - Keep changes modular and focused.
 
-4. **Commit and Push:**
-   Use clear commit messages:
+4. **Commit and Push**
    ```bash
-   git commit -am "Add [feature/bugfix]: Brief description"
-   git push origin feature/your-feature-description
+   git commit -am "Add: Description of your feature"
+   git push origin feature/your-feature
    ```
 
-5. **Open a Pull Request:**
-   Provide a detailed description of your changes and the problem they solve. Include any relevant screenshots or benchmarks.
+5. **Open a Pull Request**
+   Provide a clear summary of your changes and how they improve ArQiv.
 
-## Coding Standards
+## Coding Guidelines
 
-- Adhere to PEP8 coding standards.
-- Write clear, concise documentation/code comments.
-- Include tests where applicable and ensure your code does not break existing functionality.
+- Follow PEP8.
+- Write clear commit messages.
+- Ensure compatibility with existing tests.
 
-## Communication
-
-If you have questions or suggestions:
-- Open an issue on GitHub with detailed information.
-- Participate in discussions to share your thoughts.
-
-Thank you for contributing to ArQiv and helping us improve this project!
+Thank you for helping make ArQiv better!

@@ -1,29 +1,23 @@
-# Inverted Index and Related Data Structures
+# Inverted Index & Data Structures
 
-This section delves into the indexing mechanisms that underpin ArQiv's performance.
+ArQiv’s performance relies on a suite of optimized data structures.
 
 ## Inverted Index
 
 - **Purpose:**  
-  The inverted index is the primary data structure that maps each unique term to a list of document identifiers and positions within the documents. This enables rapid retrieval for boolean and ranked searches.
+  Maps each unique term to its document identifiers and positions, enabling fast term lookup.
 
-- **Construction:**  
-  Each document's combined title and content are tokenized, stopwords removed, and terms stemmed. Each term is then recorded along with its position.
+- **Process:**  
+  Each document’s text (title + content) is tokenized, stopwords are removed, and terms are stemmed before indexing.
 
-## Trie Data Structure
+## Trie (Prefix Tree)
 
-- **Purpose:**  
-  The trie supports fast prefix lookups, crucial for autocomplete and fuzzy search features.
-
-- **Mechanism:**  
-  Each node represents a character, and the trie is traversed to find words that match a given prefix.
+- **Usage:**  
+  Powers autocomplete and fuzzy search by rapidly matching term prefixes.
 
 ## Bitmap Index
 
-- **Purpose:**  
-  A bitmap index accelerates boolean operations using vectorized operations in NumPy.
+- **Function:**  
+  Converts postings into boolean arrays for lightning-fast Boolean operations (AND, OR), independent of posting list lengths.
 
-- **Mechanism:**  
-  Each term's occurrence across documents is stored as a boolean array. Boolean operations (AND, OR) are then executed efficiently to produce candidate document sets.
-
-These combined indexing techniques allow ArQiv to scale and retrieve results extremely fast.
+Combined, these structures allow ArQiv to deliver sub-millisecond query responses.

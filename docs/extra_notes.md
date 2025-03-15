@@ -1,33 +1,28 @@
-# Additional Notes and Insights
+# Additional Insights
 
-This document provides further technical insights and considerations regarding ArQiv’s design and potential enhancements.
+## Practical Considerations
 
-## Practical Insights
-
-- **Indexing Example:**  
-  Consider a document with the sentence “Deep learning transforms research.” After preprocessing, tokens such as `['deep', 'learn', 'transform', 'research']` are indexed, allowing rapid retrieval when matching query terms like “learn.”
+- **Indexing Efficiency:**  
+  Parallel processing drastically reduces indexing time, making it viable for large document sets.
 
 - **Query Caching:**  
-  The implementation uses an LRU cache to store recent query results, thereby significantly reducing latency on repeated searches.
+  An LRU cache speeds up repeated queries, ensuring near-instant result delivery.
 
-## Design Trade-offs and Considerations
+## Design Trade-offs
 
-- **Scalability:**  
-  Using a combination of an inverted index, trie, and bitmap index provides a balance between memory usage and query speed.
+- **Memory vs. Speed:**  
+  In-memory indexes yield rapid searches—balancing memory usage is key on low-spec hardware.
+  
+- **Algorithm Diversity:**  
+  Multiple ranking algorithms (BM25, TF-IDF, Fast Vector, optional BERT) offer flexibility in tailoring search results to different needs.
 
-- **Modular Ranking:**  
-  The multiple ranking strategies (BM25, TF-IDF, Fast Vector, and optional BERT) allow users to choose based on accuracy requirements versus computational constraints.
-
-- **Parallel Processing:**  
-  Employing Python’s `ProcessPoolExecutor` for index construction enables ArQiv to handle large datasets fast by distributing the workload.
-
-## Future Directions
+## Future Enhancements
 
 - **Hybrid Ranking Models:**  
-  Combining traditional relevance scoring with semantic analysis can further improve result quality.
-- **UI Enhancements:**  
-  Development of a web-based interface or improvements to the CLI would improve usability.
-- **Distributed Indexing:**  
-  Scaling the indexing process across multiple machines to handle even larger datasets.
+  Integrate traditional and semantic ranking.
+- **Scalable Architectures:**  
+  Explore distributed indexing and database backends.
+- **Enhanced UI:**  
+  Further improvements to the CLI and web interfaces for better usability.
 
-These insights are intended to provide context and direction for future work on ArQiv.
+These insights provide directions for future improvements while highlighting current strengths.

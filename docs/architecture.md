@@ -1,43 +1,37 @@
-# System Architecture
+# ArQiv System Architecture
 
-This document explains the overall architecture of ArQiv, detailing its modular design and data flow.
+ArQiv features a modular, layered architecture that ensures high performance and extensibility.
 
-## High-Level Modules
+## High-Level Components
 
-- **Data Module:**  
-  - *Document Model:* Defines a standardized structure for documents.
-  - *Preprocessing:* Tokenizes text, removes stopwords, and applies stemming.
-  - *Loader:* Handles dataset downloading, caching, and JSON parsing.
+- **User Interface**
+  - CLI (built with Rich)
+  - Web UI (Streamlit)
 
-- **Indexing Module:**  
-  - *Inverted Index:* Maps terms to document IDs and positions to support efficient search.
-  - *Trie:* Enables fast prefix matching and fuzzy search capabilities.
-  - *Bitmap Index:* Uses NumPy arrays to perform rapid boolean operations for candidate retrieval.
+- **Ranking Module**
+  - BM25, TF-IDF, Fast Vector, and optional BERT rankers
 
-- **Ranking Module:**  
-  - *BM25 Ranker:* Implements a probabilistic relevance scoring function.
-  - *TF-IDF Ranker:* Leverages vectorization and cosine similarity.
-  - *Fast Vector Ranker:* Uses NearestNeighbors for ultra-fast scoring.
-  - *BERT Ranker (Optional):* Provides semantic search through deep learning embeddings.
+- **Indexing Module**
+  - **Inverted Index:** Core structure mapping terms to documents.
+  - **Trie:** Enables efficient autocomplete and fuzzy search.
+  - **Bitmap Index:** Facilitates rapid Boolean operations.
 
-- **User Interface Module:**  
-  - The CLI utilizes the Rich library to provide an attractive and responsive interface for users.
+- **Data Module**
+  - **Document Model:** Standardizes metadata.
+  - **Preprocessing:** Tokenizes, cleans, and stems input text.
+  - **Loader:** Manages dataset download and caching.
 
-## Data Flow Overview
+## Data Flow
 
 1. **Data Ingestion:**  
-   Raw metadata is downloaded and parsed into `Document` objects.
-
+   Raw metadata is parsed into Document objects.
 2. **Preprocessing:**  
-   Each document is tokenized, normalized, and indexed.
-
+   Text is normalized for indexing.
 3. **Index Construction:**  
-   Documents are indexed using multiple structures for fast search and ranking.
-
+   Inverted, trie, and bitmap indexes are built.
 4. **Query Processing:**  
-   User queries are preprocessed, and results are obtained either by direct lookup or via ranking algorithms.
-
+   Input queries are preprocessed, candidate documents are fetched, and ranking algorithms compute relevance.
 5. **Result Presentation:**  
-   The CLI displays results interactively with highlighting and detailed metadata.
+   The UI displays enhanced search results with highlighted snippets.
 
-This modular architecture ensures both flexibility in ranking and robust performance.
+This architecture allows ArQiv to scale while maintaining responsiveness and accuracy.
