@@ -19,15 +19,14 @@ def download_metadata_file() -> None:
     """
     Download ArXiv metadata from Kaggle with progress feedback.
     
-    This function attempts to download using the Kaggle CLI first,
-    then falls back to curl if Kaggle CLI is not available.
+    Uses Python's built-in zipfile module instead of external unzip command.
     """
     logger.info("Metadata file not found. Downloading from Kaggle...")
     
     # Try Kaggle CLI first
     kaggle_command = [
         "kaggle", "datasets", "download", "-d", "Cornell-University/arxiv",
-        "-p", os.path.dirname(METADATA_FILE), "--unzip"
+        "-p", os.path.dirname(METADATA_FILE)
     ]
     
     try:
@@ -37,6 +36,16 @@ def download_metadata_file() -> None:
         if result.returncode != 0:
             logger.error("Kaggle CLI returned an error, attempting fallback...")
             raise Exception("Dataset download via Kaggle CLI failed.")
+            
+        # Use Python's zipfile instead of unzip command
+        import zipfile
+        zip_path = os.path.join(os.path.dirname(METADATA_FILE), "arxiv.zip")
+        if os.path.exists(zip_path):
+            logger.info("Extracting zip file using Python's zipfile module...")
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                zip_ref.extractall(os.path.dirname(METADATA_FILE))
+            logger.info("Extraction complete.")
+        
     except FileNotFoundError:
         # Fall back to curl if Kaggle CLI is not installed
         logger.warning("Kaggle CLI not found. Falling back to curl download...")
@@ -54,13 +63,12 @@ def download_metadata_file() -> None:
             logger.error("Curl download failed.")
             raise Exception("Dataset download via curl failed.")
         
-        logger.info("Download via curl complete. Extracting zip file...")
-        unzip_command = ["unzip", "-o", zip_path, "-d", os.path.dirname(METADATA_FILE)]
-        result = subprocess.run(unzip_command, capture_output=True, text=True)
-        if result.returncode != 0:
-            logger.error("Unzip failed. Output:")
-            logger.error(result.stderr)
-            raise Exception("Unzip of downloaded dataset failed.")
+        # Use Python's zipfile instead of unzip command
+        import zipfile
+        logger.info("Extracting zip file using Python's zipfile module...")
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(os.path.dirname(METADATA_FILE))
+        logger.info("Extraction complete.")
     
     logger.info("Download complete.")
 
