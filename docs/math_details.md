@@ -5,6 +5,7 @@ This document details the formulas that power ArQiv's ranking mechanisms in full
 ## BM25 Scoring
 
 For a document $$D$$ and a query $$Q$$, the BM25 score is computed as:
+
 $$
 \text{score}(D,Q) = \sum_{term \in Q} \text{idf}(term) \cdot \frac{f(term, D) \cdot (k_1 + 1)}{f(term, D) + k_1 \cdot \Bigl(1 - b + b \cdot \frac{dl}{avgdl}\Bigr)}
 $$
