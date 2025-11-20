@@ -1,5 +1,5 @@
-from index.inverted_index import InvertedIndex  # ...updated import...
-from data.preprocessing import preprocess  # ...updated import...
+from index.inverted_index import InvertedIndex
+from data.preprocessing import preprocess
 
 def levenshtein_distance(s1: str, s2: str) -> int:
     # Compute the Levenshtein edit distance between s1 and s2.
@@ -32,14 +32,3 @@ def fuzzy_search(query: str, index: InvertedIndex, max_distance: int = 1):
                 matched_docs.update(index.index[term].keys())
                 break  # Found a match for this term; move on.
     return matched_docs
-
-if __name__ == "__main__":
-    # ...existing testing code...
-    from custom_search_engine.data.loader import load_arxiv_dataset
-    from custom_search_engine.index.inverted_index import InvertedIndex
-    docs = load_arxiv_dataset("path/to/arxiv_dataset.json")
-    index = InvertedIndex()
-    index.build_index(docs)
-    query = input("Enter fuzzy search query: ")
-    results = fuzzy_search(query, index)
-    print("Fuzzy Search Results:", results)

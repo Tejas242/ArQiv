@@ -451,15 +451,3 @@ def levenshtein_distance(s1: str, s2: str) -> int:
         previous_row = current_row
         
     return previous_row[-1]
-
-
-if __name__ == "__main__":
-    from data.loader import load_arxiv_dataset
-    docs = load_arxiv_dataset("path/to/arxiv_dataset.json")
-    index = InvertedIndex()
-    if not index.load_from_file():
-        index.build_index(docs, parallel=True, workers=4)
-        index.save_to_file()
-    query = input("Enter search query: ")
-    results = index.search(query)
-    print("Results:", results)
